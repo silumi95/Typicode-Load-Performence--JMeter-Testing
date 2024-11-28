@@ -21,6 +21,7 @@
       <hashTree>
         <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Get CSV data from GitHub">
           <stringProp name="HTTPSampler.domain">raw.githubusercontent.com</stringProp>
+          <stringProp name="HTTPSampler.protocol">HTTPS</stringProp>
           <stringProp name="HTTPSampler.path">/silumi95/Typicode-Load-Performence--JMeter-Testing/refs/heads/main/TestData.csv</stringProp>
           <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
           <stringProp name="HTTPSampler.method">GET</stringProp>
@@ -30,30 +31,58 @@
             <collectionProp name="Arguments.arguments"/>
           </elementProp>
         </HTTPSamplerProxy>
-        <hashTree/>
-        <ResultSaver guiclass="ResultSaverGui" testclass="ResultSaver" testname="Save CSV Data to a Temp file">
-          <stringProp name="FileSaver.filename">C:\Users\SilumiDayawardana\Documents\JMeter</stringProp>
-          <boolProp name="FileSaver.errorsonly">true</boolProp>
-          <boolProp name="FileSaver.successonly">true</boolProp>
-          <boolProp name="FileSaver.skipsuffix">false</boolProp>
-          <boolProp name="FileSaver.skipautonumber">false</boolProp>
-          <stringProp name="FileSaver.variablename">data.csv</stringProp>
-          <boolProp name="FileSaver.ignoreTC">false</boolProp>
-        </ResultSaver>
-        <hashTree/>
+        <hashTree>
+          <JSR223PostProcessor guiclass="TestBeanGUI" testclass="JSR223PostProcessor" testname="Save Data to Local">
+            <stringProp name="cacheKey">true</stringProp>
+            <stringProp name="filename"></stringProp>
+            <stringProp name="parameters"></stringProp>
+            <stringProp name="script">import java.io.File
+import java.io.IOException
+
+// Get the working directory based on the environment
+String workspaceDir = System.getenv(&quot;WORKSPACE&quot;) ?: System.getProperty(&quot;user.dir&quot;)
+
+// Log the working directory for debugging purposes
+log.info(&quot;Working Directory: &quot; + workspaceDir)
+
+// Define the relative path for the CSV file (in the working directory)
+String tempCsvFile = workspaceDir + &quot;/output.csv&quot;
+
+// Log the file path that will be used for the CSV file
+log.info(&quot;Temp CSV File Path: &quot; + tempCsvFile)
+
+try {
+    // Create a new File object for the CSV file
+    File tempFile = new File(tempCsvFile)
+
+    // Check if the file exists, and if not, create it
+    if (!tempFile.exists()) {
+        boolean fileCreated = tempFile.createNewFile()
+        if (fileCreated) {
+            log.info(&quot;File created successfully: &quot; + tempCsvFile)
+        } else {
+            log.error(&quot;Failed to create file: &quot; + tempCsvFile)
+            return  // Stop the script if file creation fails
+        }
+    }
+
+    // Get the response data (from JMeter&apos;s SampleResult)
+    def responseData = prev.getResponseDataAsString()  // Get the actual response data
+
+    // Append the response data to the CSV file
+    tempFile.append(responseData)
+    log.info(&quot;Data written to the file: &quot; + tempCsvFile)
+} catch (IOException e) {
+    log.error(&quot;Error while working with the file: &quot; + e.message)
+}
+</stringProp>
+            <stringProp name="scriptLanguage">groovy</stringProp>
+          </JSR223PostProcessor>
+          <hashTree/>
+        </hashTree>
       </hashTree>
-      <ConfigTestElement guiclass="HttpDefaultsGui" testclass="ConfigTestElement" testname="HTTP Request Details">
-        <stringProp name="HTTPSampler.domain">jsonplaceholder.typicode.com</stringProp>
-        <stringProp name="HTTPSampler.port">443</stringProp>
-        <stringProp name="HTTPSampler.protocol">HTTPS</stringProp>
-        <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables">
-          <collectionProp name="Arguments.arguments"/>
-        </elementProp>
-        <stringProp name="HTTPSampler.implementation">HttpClient4</stringProp>
-      </ConfigTestElement>
-      <hashTree/>
       <CSVDataSet guiclass="TestBeanGUI" testclass="CSVDataSet" testname="CSV Data Set Configuration">
-        <stringProp name="filename">data.csv</stringProp>
+        <stringProp name="filename">output.csv</stringProp>
         <stringProp name="fileEncoding"></stringProp>
         <stringProp name="variableNames">id,userId</stringProp>
         <boolProp name="ignoreFirstLine">true</boolProp>
@@ -63,6 +92,15 @@
         <boolProp name="stopThread">false</boolProp>
         <stringProp name="shareMode">shareMode.all</stringProp>
       </CSVDataSet>
+      <hashTree/>
+      <ConfigTestElement guiclass="HttpDefaultsGui" testclass="ConfigTestElement" testname="HTTP Request Details">
+        <stringProp name="HTTPSampler.domain">jsonplaceholder.typicode.com</stringProp>
+        <stringProp name="HTTPSampler.protocol">HTTPS</stringProp>
+        <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables">
+          <collectionProp name="Arguments.arguments"/>
+        </elementProp>
+        <stringProp name="HTTPSampler.implementation">HttpClient4</stringProp>
+      </ConfigTestElement>
       <hashTree/>
       <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="GET ALL">
         <intProp name="ThreadGroup.num_threads">200</intProp>
